@@ -6,6 +6,7 @@ Author : [![](https://img.shields.io/badge/@Pas0412-grey)](https://github.com/Pa
 Project of DS50 UTBM 2023 ：Web e-commerce with recommandation algorithm
 
 ![](https://img.shields.io/badge/IDE-PyCharm-000000?style=flat&logo=pycharm)
+![](https://img.shields.io/badge/Platform-MacOS&emsp;Ventura&emsp;13.0.1-000000?style=flat&logo=apple)
 
 ![](https://img.shields.io/badge/Python-v3.9-3776AB?style=for-the-badge&logo=python)
 ![](https://img.shields.io/badge/Django-v4.1.7-092E20?style=for-the-badge&logo=django)
