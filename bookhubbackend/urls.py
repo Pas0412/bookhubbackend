@@ -19,5 +19,12 @@ from bookhub import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('login/', views.login)
+    path('login/', views.login),
+    path('popular/', views.getMostPopular),
+    path('rated/', views.getMostRated),
+    path('recommended/', views.getRecommendedBooks),
+    path('all/', views.getAllBooks),
+    path('cart', views.getShoppingCart),
+    path('categories/', views.getAllCategories),
+    path('search/', views.getSearchResult),
 ]
