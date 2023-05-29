@@ -26,3 +26,10 @@ class Books(models.Model):
     img_s = models.CharField(max_length=100, db_column="Image-URL-S")
     img_m = models.CharField(max_length=100, db_column="Image-URL-M")
     img_l = models.CharField(max_length=100, db_column="Image-URL-L")
+
+
+class Ratings(models.Model):
+    userId = models.CharField(max_length=100, db_column="User-ID")
+    bookId = models.CharField(max_length=100, db_column="ISBN")
+    rating = models.IntegerField(max_length=2, db_column="Book-Rating")
+    like = models.IntergerField(max_length=1, db_column="Favorite")
