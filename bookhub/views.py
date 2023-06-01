@@ -3,6 +3,8 @@ from django.http import JsonResponse
 from bookhub.utils import hash_password
 from .models import User
 from .models import Books
+from .models import Rating
+from .models import Category
 from django.views.decorators.csrf import csrf_exempt
 import json
 
@@ -33,7 +35,7 @@ def sign_up(request):
     password = request.POST.get("pwd")
     # email = request.POST.get("email")
     password_hash = hash_password(password)
-    user = User(name=username, password=password_hash)
+    user = User(username=username, password=password_hash)
     user.save()
     return HttpResponse('User created')
 
@@ -48,12 +50,12 @@ def login(request):
     #     return response
     if request.method == 'POST':
         data = json.loads(request.body)
-        username = data.get('username')
-        password = data.get('password')
-        password_hash = hash_password(password)
-        print(username, password_hash)
-        admin = User.objects.filter(name=username).first()
-        if admin and username == admin.name and password_hash == admin.password:
+        name = data.get('username')
+        pwd = data.get('password')
+        password_hash = hash_password(pwd)
+        print(name, password_hash)
+        admin = User.objects.filter(username=name).first()
+        if name == admin.username and password_hash == admin.password:
             response_data = {'code': 200, 'message': 'Login success'}
         else:
             response_data = {'code': 400, 'message': 'Login failed'}
@@ -66,7 +68,7 @@ def login(request):
 @csrf_exempt
 def getMostPopular(request):
     # TODO: get most popular books here
-    data = Books.objects.first()
+    data = []
 
     return JsonResponse({'code': 200, 'message': 'most popular', 'data': data})
 
@@ -75,7 +77,7 @@ def getMostPopular(request):
 @csrf_exempt
 def getMostRated(request):
     # TODO: get most rated books here
-    data = Books.objects.first()
+    data = []
 
     return JsonResponse({'code': 200, 'message': 'most rated', 'data': data})
 
@@ -84,7 +86,7 @@ def getMostRated(request):
 @csrf_exempt
 def getAllBooks(request):
     # TODO: get all books here
-    data = Books.objects.first()
+    data = []
 
     return JsonResponse({'code': 200, 'message': 'all books', 'data': data})
 
@@ -93,16 +95,15 @@ def getAllBooks(request):
 @csrf_exempt
 def getAllCategories(request):
     # TODO: get all categories here
-    data = []
-
-    return JsonResponse({'code': 200, 'message': 'all categories', 'data': data})
+    data = Category.objects.values()  # 获取Category数据
+    return JsonResponse({'code': 200, 'message': 'all categories', 'data': list(data)})
 
 
 # get recommended books
 @csrf_exempt
 def getRecommendedBooks(request):
     # TODO: get recommended books here
-    data = Books.objects.first()
+    data = []
 
     return JsonResponse({'code': 200, 'message': 'recommended', 'data': data})
 
@@ -111,8 +112,8 @@ def getRecommendedBooks(request):
 @csrf_exempt
 def getShoppingCart(request):
     # TODO: get shopping cart here
-    user = json.loads(request.body)
-    user_id = user.get('id')
+    # user = json.loads(request.body)
+    # user_id = user.get('id')
     # TODO: get user's cart info (books ids) by user_id
     data = []
 
@@ -123,7 +124,7 @@ def getShoppingCart(request):
 @csrf_exempt
 def getSearchResult(request):
     # TODO: get search result here
-    str = json.loads(request.body)
+    # str = json.loads(request.body)
     # TODO: get result by str
     data = []
 
