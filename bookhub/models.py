@@ -35,10 +35,19 @@ class Books(models.Model):
 
 
 class Rating(models.Model):
-    userId = models.CharField(max_length=100, db_column="User-ID")
+    userId = models.IntegerField(db_column="User-ID")
     bookId = models.CharField(max_length=100, db_column="ISBN")
     rating = models.IntegerField(db_column="Book-Rating")
     like = models.IntegerField(db_column="Favorite")
 
     class Meta:
         db_table = 'Rating'
+
+
+class Cart(models.Model):
+    userId = models.IntegerField(db_column="user_id")
+    bookId = models.CharField(max_length=100, db_column="book_id")
+    count = models.IntegerField(db_column="count")
+
+    class Meta:
+        db_table = 'Cart'

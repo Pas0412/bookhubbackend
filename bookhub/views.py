@@ -5,6 +5,7 @@ from .models import User
 from .models import Books
 from .models import Rating
 from .models import Category
+from .models import Cart
 from django.views.decorators.csrf import csrf_exempt
 import json
 
@@ -66,7 +67,7 @@ def login(request):
 
 # get most popular
 @csrf_exempt
-def getMostPopular(request):
+def get_most_popular(request):
     # TODO: get most popular books here
     data = []
 
@@ -75,7 +76,7 @@ def getMostPopular(request):
 
 # get most rated
 @csrf_exempt
-def getMostRated(request):
+def get_most_rated(request):
     # TODO: get most rated books here
     data = []
 
@@ -84,16 +85,34 @@ def getMostRated(request):
 
 # get all books
 @csrf_exempt
-def getAllBooks(request):
+def get_all_books(request):
     # TODO: get all books here
-    data = []
+    # 12 books for demo
+    books = Books.objects.all()[:10]
+
+    # convert to json
+    data = [
+        {
+            'bookId': book.bookId,
+            'title': book.title,
+            'author': book.author,
+            'publisher': book.publisher,
+            'category': book.category,
+            'year': book.year,
+            'price': book.price,
+            'img_s': book.img_s,
+            'img_m': book.img_m,
+            'img_l': book.img_l,
+        }
+        for book in books
+    ]
 
     return JsonResponse({'code': 200, 'message': 'all books', 'data': data})
 
 
 # get all categories
 @csrf_exempt
-def getAllCategories(request):
+def get_all_categories(request):
     # TODO: get all categories here
     data = Category.objects.values()  # 获取Category数据
     return JsonResponse({'code': 200, 'message': 'all categories', 'data': list(data)})
@@ -101,31 +120,117 @@ def getAllCategories(request):
 
 # get recommended books
 @csrf_exempt
-def getRecommendedBooks(request):
+def get_recommended_books(request):
     # TODO: get recommended books here
     data = []
 
     return JsonResponse({'code': 200, 'message': 'recommended', 'data': data})
 
 
+# set shopping cart
+@csrf_exempt
+def set_shopping_cart(request):
+    data = json.loads(request.body)
+    data_user_id = data.get("user_id")
+    data_book_id = data.get("book_id")
+    data_count = data.get("count")
+
+    cart = Cart()
+    cart.userId = data_user_id
+    cart.bookId = data_book_id
+    cart.count = data_count
+    cart.save()
+
+
+def remove_cart(request):
+    if request.method == 'POST':
+        user_id = request.POST.get('user_id')
+        book_id = request.POST.get('book_id')
+
+        # send book_id = -1 if you want to vide cart
+        if book_id != -1:
+            deleted_count, _ = Cart.objects.filter(userId=user_id, bookId=book_id).delete()
+        # 执行删除操作
+        else:
+            deleted_count, _ = Cart.objects.filter(userId=user_id).delete()
+
+        return JsonResponse({'code': 200, 'message': f'{deleted_count} records deleted'})
+    else:
+        return JsonResponse({'code': 400, 'message': 'Invalid request'})
+
+
 # get shopping cart
 @csrf_exempt
-def getShoppingCart(request):
+def get_shopping_cart(request):
     # TODO: get shopping cart here
-    # user = json.loads(request.body)
-    # user_id = user.get('id')
+    user = json.loads(request.body)
+    user_id = user.get('id')
     # TODO: get user's cart info (books ids) by user_id
-    data = []
+    # 根据user_id在集合中查找对应的记录
+    try:
+        record = Cart.objects.get(user_id=user_id)
+    except Cart.DoesNotExist:
+        return JsonResponse({'code': 200, 'message': 'Record not found'})
 
-    return JsonResponse({'code': 200, 'message': 'shopping cart', 'data': data})
+    book_id = record.book_id
+    count = record.count
+
+    # 根据book_id在books集合中查找对应的所有信息
+    try:
+        book = Books.objects.get(bookId=book_id)
+    except Books.DoesNotExist:
+        return JsonResponse({'code': 400, 'message': 'Book not found'})
+
+    # 组合books信息和count，并发送给前端
+    response_data = {
+        'user_id': user_id,
+        'book_id': book_id,
+        'count': count,
+        'book_info': {
+            "bookId": book.bookId,
+            "title": book.title,
+            "author": book.author,
+            "publisher": book.publisher,
+            "category": book.category,
+            "year": book.year,
+            "price": book.price,
+            "img_s": book.img_s,
+            "img_m": book.img_m,
+            "img_l": book.img_l,
+        }
+    }
+    return JsonResponse({'code': 200, 'message': 'shopping cart', 'data': response_data})
 
 
 # get search result
 @csrf_exempt
-def getSearchResult(request):
+def get_search_result(request):
     # TODO: get search result here
-    # str = json.loads(request.body)
+    str = json.loads(request.body)
     # TODO: get result by str
     data = []
 
     return JsonResponse({'code': 200, 'message': 'search', 'data': data})
+
+
+@csrf_exempt
+def get_book_detail(request):
+    param = json.loads(request.body)
+    book_id = param.get("id")
+    try:
+        book = Books.objects.get(bookId=book_id)
+        data = {
+            "bookId": book.bookId,
+            "title": book.title,
+            "author": book.author,
+            "publisher": book.publisher,
+            "category": book.category,
+            "year": book.year,
+            "price": book.price,
+            "img_s": book.img_s,
+            "img_m": book.img_m,
+            "img_l": book.img_l,
+        }
+        return JsonResponse({'code': 200, 'message': 'get book details', 'data': data})
+    except Books.DoesNotExist:
+        return JsonResponse({'code': 404, 'message': 'book not found'})
