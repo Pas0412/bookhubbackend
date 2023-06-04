@@ -56,8 +56,18 @@ def login(request):
         password_hash = hash_password(pwd)
         print(name, password_hash)
         admin = User.objects.filter(username=name).first()
-        if name == admin.username and password_hash == admin.password:
-            response_data = {'code': 200, 'message': 'Login success'}
+        data_respond = [
+            {
+                "user_id": admin.user_id,
+                "username": admin.username,
+                "password": admin.password
+            }
+        ]
+        print(name, password_hash)
+        print(admin.username, admin.password)
+        print(name == admin.username and password_hash == admin.password)
+        if admin and name == admin.username and password_hash == admin.password:
+            response_data = {'code': 200, 'message': 'Login success', 'data': data_respond}
         else:
             response_data = {'code': 400, 'message': 'Login failed'}
         return JsonResponse(response_data)
@@ -135,28 +145,34 @@ def set_shopping_cart(request):
     data_book_id = data.get("book_id")
     data_count = data.get("count")
 
-    cart = Cart()
-    cart.userId = data_user_id
-    cart.bookId = data_book_id
-    cart.count = data_count
-    cart.save()
+    try:
+        Cart.objects.filter(userId=data_user_id, bookId=data_book_id).update(count=data_count)
+    except Cart.DoesNotExist:
+        newcart = Cart()
+        newcart.userId = data_user_id
+        newcart.bookId = data_book_id
+        newcart.count = data_count
+        newcart.save()
+
+    return JsonResponse({'code': 200, 'message': 'success'})
 
 
+@csrf_exempt
 def remove_cart(request):
-    if request.method == 'POST':
-        user_id = request.POST.get('user_id')
-        book_id = request.POST.get('book_id')
-
-        # send book_id = -1 if you want to vide cart
-        if book_id != -1:
-            deleted_count, _ = Cart.objects.filter(userId=user_id, bookId=book_id).delete()
-        # 执行删除操作
-        else:
-            deleted_count, _ = Cart.objects.filter(userId=user_id).delete()
-
-        return JsonResponse({'code': 200, 'message': f'{deleted_count} records deleted'})
+    user_book = json.loads(request.body)
+    print(user_book)
+    user_id = user_book.get('user_id')
+    book_id = user_book.get('book_id')
+    print(type(user_id))
+    print(type(book_id))
+    # send book_id = -1 if you want to vide cart
+    if book_id != -1:
+        deleted_count, _ = Cart.objects.filter(userId=user_id, bookId=book_id).delete()
+    # 执行删除操作
     else:
-        return JsonResponse({'code': 400, 'message': 'Invalid request'})
+        deleted_count, _ = Cart.objects.filter(userId=user_id).delete()
+
+    return JsonResponse({'code': 200, 'message': f'{deleted_count} records deleted'})
 
 
 # get shopping cart
@@ -164,31 +180,26 @@ def remove_cart(request):
 def get_shopping_cart(request):
     # TODO: get shopping cart here
     user = json.loads(request.body)
+    print(request)
+    print(request.body)
     user_id = user.get('id')
+    print(user_id)
     # TODO: get user's cart info (books ids) by user_id
     # 根据user_id在集合中查找对应的记录
     try:
-        record = Cart.objects.get(user_id=user_id)
+        record = Cart.objects.filter(userId=user_id)
+        print(record)
     except Cart.DoesNotExist:
         return JsonResponse({'code': 200, 'message': 'Record not found'})
 
-    book_id = record.book_id
-    count = record.count
-
-    # 根据book_id在books集合中查找对应的所有信息
-    try:
-        book = Books.objects.get(bookId=book_id)
-    except Books.DoesNotExist:
-        return JsonResponse({'code': 400, 'message': 'Book not found'})
-
-    # 组合books信息和count，并发送给前端
-    response_data = {
-        'user_id': user_id,
-        'book_id': book_id,
-        'count': count,
-        'book_info': {
-            "bookId": book.bookId,
-            "title": book.title,
+    results = []
+    for item in record:
+        book = Books.objects.get(bookId=item.bookId)
+        results.append({
+            'user_id': user_id,
+            'book_id': book.bookId,
+            'count': item.count,
+            'title': book.title,
             "author": book.author,
             "publisher": book.publisher,
             "category": book.category,
@@ -197,9 +208,9 @@ def get_shopping_cart(request):
             "img_s": book.img_s,
             "img_m": book.img_m,
             "img_l": book.img_l,
-        }
-    }
-    return JsonResponse({'code': 200, 'message': 'shopping cart', 'data': response_data})
+        })
+
+    return JsonResponse({'code': 200, 'message': 'shopping cart', 'data': results})
 
 
 # get search result

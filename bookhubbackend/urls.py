@@ -24,7 +24,7 @@ urlpatterns = [
     path('rated/', views.get_most_rated),
     path('recommended/', views.get_recommended_books),
     path('all/', views.get_all_books),
-    path('cart', views.get_shopping_cart),
+    path('cart/', views.get_shopping_cart),
     path('categories/', views.get_all_categories),
     path('search/', views.get_search_result),
     path('detail/', views.get_book_detail),
