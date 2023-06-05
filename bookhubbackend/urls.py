@@ -29,5 +29,7 @@ urlpatterns = [
     path('search/', views.get_search_result),
     path('detail/', views.get_book_detail),
     path('setcart/', views.set_shopping_cart),
-    path('removecart/', views.remove_cart)
+    path('removecart/', views.remove_cart),
+    path('favorite/', views.get_favorite_list),
+    path('setfavorite/', views.set_favorite_list)
 ]

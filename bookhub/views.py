@@ -19,18 +19,6 @@ class R:
         self.data = data
 
 
-def index(request):
-    return HttpResponse("欢迎使用")
-
-
-def user_list(request):
-    return HttpResponse("用户列表")
-
-
-def user_add(request):
-    return HttpResponse("添加用户")
-
-
 def sign_up(request):
     username = request.POST.get("user")
     password = request.POST.get("pwd")
@@ -178,13 +166,12 @@ def remove_cart(request):
 # get shopping cart
 @csrf_exempt
 def get_shopping_cart(request):
-    # TODO: get shopping cart here
     user = json.loads(request.body)
     print(request)
     print(request.body)
     user_id = user.get('id')
     print(user_id)
-    # TODO: get user's cart info (books ids) by user_id
+    # get user's cart info (books ids) by user_id
     # 根据user_id在集合中查找对应的记录
     try:
         record = Cart.objects.filter(userId=user_id)
@@ -245,3 +232,61 @@ def get_book_detail(request):
         return JsonResponse({'code': 200, 'message': 'get book details', 'data': data})
     except Books.DoesNotExist:
         return JsonResponse({'code': 404, 'message': 'book not found'})
+
+
+# set favorite list
+@csrf_exempt
+def set_favorite_list(request):
+    data = json.loads(request.body)
+    data_user_id = data.get("user_id")
+    data_book_id = data.get("book_id")
+    data_like = data.get("like")
+
+    try:
+        Rating.objects.filter(userId=data_user_id, bookId=data_book_id).update(like=data_like)
+    except Rating.DoesNotExist:
+        favorite = Rating()
+        favorite.userId = data_user_id
+        favorite.bookId = data_book_id
+        favorite.rating = 0
+        favorite.like = 0
+        favorite.save()
+
+    return JsonResponse({'code': 200, 'message': 'success'})
+
+
+# get favorite list
+@csrf_exempt
+def get_favorite_list(request):
+    # TODO: get favorite list here
+    user = json.loads(request.body)
+    user_id = user.get('id')
+    print(user_id)
+    # TODO: get user's favorite info by user_id
+    # 根据user_id在集合中查找对应的记录
+    try:
+        record = Rating.objects.filter(userId=user_id, like=1)
+        print(record)
+    except Rating.DoesNotExist:
+        return JsonResponse({'code': 200, 'message': 'Record not found'})
+
+    results = []
+
+    for item in record:
+        book = Books.objects.get(bookId=item.bookId)
+        results.append({
+            'user_id': user_id,
+            'book_id': book.bookId,
+            'count': item.count,
+            'title': book.title,
+            "author": book.author,
+            "publisher": book.publisher,
+            "category": book.category,
+            "year": book.year,
+            "price": book.price,
+            "img_s": book.img_s,
+            "img_m": book.img_m,
+            "img_l": book.img_l,
+        })
+
+    return JsonResponse({'code': 200, 'message': 'shopping cart', 'data': results})
