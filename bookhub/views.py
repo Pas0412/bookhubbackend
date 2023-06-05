@@ -8,7 +8,8 @@ from .models import Category
 from .models import Cart
 from django.views.decorators.csrf import csrf_exempt
 import json
-
+from django.db.models import Avg
+from decimal import Decimal, ROUND_HALF_UP
 
 # Create your views here.
 # Result class general
@@ -18,6 +19,14 @@ class R:
         self.message = message
         self.data = data
 
+
+# function of avg rating
+def get_average_rating(book_id):
+    try:
+        average_rating = Rating.objects.filter(bookId=book_id, rating__gt=0).aggregate(avg_rating=Avg('rating'))
+    except Rating.DoesNotExist:
+        return 0
+    return Decimal(average_rating['avg_rating']/2).quantize(Decimal('0.00'), rounding=ROUND_HALF_UP)
 
 def sign_up(request):
     username = request.POST.get("user")
@@ -76,17 +85,35 @@ def get_most_popular(request):
 @csrf_exempt
 def get_most_rated(request):
     # TODO: get most rated books here
-    data = []
+    top_books = Rating.objects.values('bookId').annotate(avg_rating=Avg('rating')).order_by('-avg_rating')[:12]
+    book_ids = [book['bookId'] for book in top_books]
+    top_rated_books = Books.objects.filter(bookId__in=book_ids)
 
-    return JsonResponse({'code': 200, 'message': 'most rated', 'data': data})
+    serialized_data = []
+    for book in top_rated_books:
+        serialized_data.append({
+            'bookId': book.bookId,
+            'title': book.title,
+            'author': book.author,
+            'publisher': book.publisher,
+            'category': book.category,
+            'year': book.year,
+            'price': book.price,
+            'img_s': book.img_s,
+            'img_m': book.img_m,
+            'img_l': book.img_l,
+        })
+    print(serialized_data)
+
+    return JsonResponse({'code': 200, 'message': 'most rated', 'data': serialized_data})
 
 
 # get all books
 @csrf_exempt
 def get_all_books(request):
     # TODO: get all books here
-    # 12 books for demo
-    books = Books.objects.all()[:10]
+    # 200 books for demo
+    books = Books.objects.all()[:200]
 
     # convert to json
     data = [
@@ -217,6 +244,7 @@ def get_book_detail(request):
     book_id = param.get("id")
     try:
         book = Books.objects.get(bookId=book_id)
+        note = get_average_rating(book_id)
         data = {
             "bookId": book.bookId,
             "title": book.title,
@@ -228,6 +256,7 @@ def get_book_detail(request):
             "img_s": book.img_s,
             "img_m": book.img_m,
             "img_l": book.img_l,
+            "rate": note
         }
         return JsonResponse({'code': 200, 'message': 'get book details', 'data': data})
     except Books.DoesNotExist:
@@ -277,7 +306,6 @@ def get_favorite_list(request):
         results.append({
             'user_id': user_id,
             'book_id': book.bookId,
-            'count': item.count,
             'title': book.title,
             "author": book.author,
             "publisher": book.publisher,
