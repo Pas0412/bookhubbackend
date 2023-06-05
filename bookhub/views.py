@@ -1,6 +1,6 @@
 from django.shortcuts import render, HttpResponse
 from django.http import JsonResponse
-from bookhub.utils import hash_password
+from bookhub.utils import hash_password, knn_find_neighbors
 from .models import User
 from .models import Books
 from .models import Rating
@@ -342,5 +342,39 @@ def is_favorite(request):
         res = 1
 
     return JsonResponse({'code': 200, 'message': 'success', 'data': res})
+
+
+@csrf_exempt
+def recommend_by_book(request):
+    req = json.loads(request.body)
+    data_book_id = req.get('book_id')
+
+    res = []
+    res_list = knn_find_neighbors(data_book_id)
+    print(res_list)
+    for book_id in res_list:
+        book = Books.objects.filter(bookId=book_id).first()  # 在Books集合中查找匹配的书籍
+        if book:
+            res.append(book)
+
+    processed_res = []
+    for book in res:
+        book_data = {
+            "bookId": book.bookId,
+            "title": book.title,
+            "author": book.author,
+            "publisher": book.publisher,
+            "category": book.category,
+            "year": book.year,
+            "price": book.price,
+            "img_s": book.img_s,
+            "img_m": book.img_m,
+            "img_l": book.img_l,
+        }
+        processed_res.append(book_data)
+
+    print(processed_res)
+
+    return JsonResponse({'code': 200, 'message': 'success', 'data': processed_res})
 
 

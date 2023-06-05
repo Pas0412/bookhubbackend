@@ -32,5 +32,6 @@ urlpatterns = [
     path('removecart/', views.remove_cart),
     path('favorite/', views.get_favorite_list),
     path('setfavorite/', views.set_favorite_list),
-    path('isfavorite/', views.is_favorite)
+    path('isfavorite/', views.is_favorite),
+    path('recommendbybook/', views.recommend_by_book)
 ]
