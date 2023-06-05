@@ -280,7 +280,7 @@ def set_favorite_list(request):
         favorite.userId = data_user_id
         favorite.bookId = data_book_id
         favorite.rating = 0
-        favorite.like = 0
+        favorite.like = data_like
         favorite.save()
 
     return JsonResponse({'code': 200, 'message': 'success'})
@@ -292,12 +292,10 @@ def get_favorite_list(request):
     # TODO: get favorite list here
     user = json.loads(request.body)
     user_id = user.get('id')
-    print(user_id)
     # TODO: get user's favorite info by user_id
     # 根据user_id在集合中查找对应的记录
     try:
         record = Rating.objects.filter(userId=user_id, like=1)
-        print(record)
     except Rating.DoesNotExist:
         return JsonResponse({'code': 200, 'message': 'Record not found'})
 
@@ -320,3 +318,29 @@ def get_favorite_list(request):
         })
 
     return JsonResponse({'code': 200, 'message': 'shopping cart', 'data': results})
+
+
+# if user favorite this book
+@csrf_exempt
+def is_favorite(request):
+    req = json.loads(request.body)
+    data_user_id = req.get('user_id')
+    data_book_id = req.get('book_id')
+
+    try:
+        data = Rating.objects.get(userId=data_user_id, bookId=data_book_id)
+    except Rating.DoesNotExist:
+        data = Rating()
+        data.userId = data_user_id
+        data.bookId = data_book_id
+        data.rating = 0
+        data.like = 0
+        data.save()
+
+    res = 0
+    if data.like == 1:
+        res = 1
+
+    return JsonResponse({'code': 200, 'message': 'success', 'data': res})
+
+
