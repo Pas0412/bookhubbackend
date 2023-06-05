@@ -112,8 +112,10 @@ def get_most_rated(request):
 @csrf_exempt
 def get_all_books(request):
     # TODO: get all books here
-    # 200 books for demo
-    books = Books.objects.all()[:200]
+    req = json.loads(request.body)
+    cat = req.get('category')
+    print('cat:' + cat)
+    books = Books.objects.filter(category=cat)[:20]
 
     # convert to json
     data = [
