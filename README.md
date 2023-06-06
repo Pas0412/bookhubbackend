@@ -3,7 +3,7 @@ backend for bookhub using Django and Python
 
 Author : [![](https://img.shields.io/badge/@Pas0412-grey)](https://github.com/Pas0412)
 
-Project of DS50 UTBM 2023 ：Web e-commerce with recommandation algorithm
+Project of DS50 UTBM 2023 ：Web e-commerce with recommandation algorithm （KNN）
 
 ![](https://img.shields.io/badge/IDE-PyCharm-lightgreen?style=flat&logo=pycharm)
 ![](https://img.shields.io/badge/Platform-MacOS&emsp;Ventura&emsp;13.0.1-000000?style=flat&logo=apple)
@@ -30,6 +30,12 @@ python3.9 manage.py migrate bookhub
 ###  USER
 
 ###  CATEGORY
+
+###  RATING
+
+###  BOOKS
+
+###  CART
 
 ## DEPENDENCIES
 ``` bash
