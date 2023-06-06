@@ -8,8 +8,9 @@ from .models import Category
 from .models import Cart
 from django.views.decorators.csrf import csrf_exempt
 import json
-from django.db.models import Avg
+from django.db.models import Avg, Count
 from decimal import Decimal, ROUND_HALF_UP
+
 
 # Create your views here.
 # Result class general
@@ -26,16 +27,29 @@ def get_average_rating(book_id):
         average_rating = Rating.objects.filter(bookId=book_id, rating__gt=0).aggregate(avg_rating=Avg('rating'))
     except Rating.DoesNotExist:
         return 0
-    return Decimal(average_rating['avg_rating']/2).quantize(Decimal('0.00'), rounding=ROUND_HALF_UP)
+    return Decimal(average_rating['avg_rating'] / 2).quantize(Decimal('0.00'), rounding=ROUND_HALF_UP)
+
 
 def sign_up(request):
-    username = request.POST.get("user")
-    password = request.POST.get("pwd")
-    # email = request.POST.get("email")
+    req = json.loads(request.body)
+    username = req.get("username")
+    password = req.get("password")
     password_hash = hash_password(password)
-    user = User(username=username, password=password_hash)
-    user.save()
-    return HttpResponse('User created')
+    # 检查用户名是否已存在
+    if User.objects.filter(username=username).exists():
+        return JsonResponse({'code': 200, 'message': 'sign up failed'})
+
+    # 获取当前最大的userId
+    max_user = User.objects.order_by('-userId').first()
+
+    # 计算新用户的userId
+    new_user_id = max_user.userId + 1 if max_user else 1
+
+    # 创建新用户
+    new_user = User(userId=new_user_id, username=username)
+    new_user.save()
+
+    return JsonResponse({'code': 200, 'message': 'user created'})
 
 
 @csrf_exempt
@@ -76,15 +90,34 @@ def login(request):
 @csrf_exempt
 def get_most_popular(request):
     # TODO: get most popular books here
-    data = []
+    popular_books = Rating.objects.values('bookId').annotate(popularity=Count('bookId')).order_by('-popularity')[:12]
+    book_ids = [book['bookId'] for book in popular_books]
 
-    return JsonResponse({'code': 200, 'message': 'most popular', 'data': data})
+    get_books_info = Books.objects.filter(bookId__in=book_ids)
+
+    serialized_data = []
+    for book in get_books_info:
+        serialized_data.append({
+            'bookId': book.bookId,
+            'title': book.title,
+            'author': book.author,
+            'publisher': book.publisher,
+            'category': book.category,
+            'year': book.year,
+            'price': book.price,
+            'img_s': book.img_s,
+            'img_m': book.img_m,
+            'img_l': book.img_l,
+        })
+    print(serialized_data)
+
+    return JsonResponse({'code': 200, 'message': 'most popular', 'data': serialized_data})
 
 
 # get most rated
 @csrf_exempt
 def get_most_rated(request):
-    # TODO: get most rated books here
+    # get most rated books here
     top_books = Rating.objects.values('bookId').annotate(avg_rating=Avg('rating')).order_by('-avg_rating')[:12]
     book_ids = [book['bookId'] for book in top_books]
     top_rated_books = Books.objects.filter(bookId__in=book_ids)
@@ -111,7 +144,7 @@ def get_most_rated(request):
 # get all books
 @csrf_exempt
 def get_all_books(request):
-    # TODO: get all books here
+    # get all books here
     req = json.loads(request.body)
     cat = req.get('category')
     print('cat:' + cat)
@@ -140,18 +173,31 @@ def get_all_books(request):
 # get all categories
 @csrf_exempt
 def get_all_categories(request):
-    # TODO: get all categories here
+    # get all categories here
     data = Category.objects.values()  # 获取Category数据
     return JsonResponse({'code': 200, 'message': 'all categories', 'data': list(data)})
 
 
-# get recommended books
+# Add to cart
 @csrf_exempt
-def get_recommended_books(request):
-    # TODO: get recommended books here
-    data = []
+def add_to_cart(request):
+    data = json.loads(request.body)
+    data_user_id = data.get("user_id")
+    data_book_id = data.get("book_id")
 
-    return JsonResponse({'code': 200, 'message': 'recommended', 'data': data})
+
+    cart = Cart.objects.filter(userId=data_user_id, bookId=data_book_id)
+    if cart:
+        count_temp = cart.count + 1
+        cart.update(count=count_temp)
+    else:
+        new_cart = Cart()
+        new_cart.userId = data_user_id
+        new_cart.bookId = data_book_id
+        new_cart.count = 1
+        new_cart.save()
+
+    return JsonResponse({'code': 200, 'message': 'added to cart'})
 
 
 # set shopping cart
@@ -165,11 +211,11 @@ def set_shopping_cart(request):
     try:
         Cart.objects.filter(userId=data_user_id, bookId=data_book_id).update(count=data_count)
     except Cart.DoesNotExist:
-        newcart = Cart()
-        newcart.userId = data_user_id
-        newcart.bookId = data_book_id
-        newcart.count = data_count
-        newcart.save()
+        cart = Cart()
+        cart.userId = data_user_id
+        cart.bookId = data_book_id
+        cart.count = data_count
+        cart.save()
 
     return JsonResponse({'code': 200, 'message': 'success'})
 
@@ -289,10 +335,10 @@ def set_favorite_list(request):
 # get favorite list
 @csrf_exempt
 def get_favorite_list(request):
-    # TODO: get favorite list here
+    # get favorite list here
     user = json.loads(request.body)
     user_id = user.get('id')
-    # TODO: get user's favorite info by user_id
+    # get user's favorite info by user_id
     # 根据user_id在集合中查找对应的记录
     try:
         record = Rating.objects.filter(userId=user_id, like=1)
@@ -376,5 +422,3 @@ def recommend_by_book(request):
     print(processed_res)
 
     return JsonResponse({'code': 200, 'message': 'success', 'data': processed_res})
-
-

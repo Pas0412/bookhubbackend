@@ -1,4 +1,6 @@
 import hashlib
+import timeit
+
 import pandas as pd
 import numpy as np
 from scipy.sparse import csr_matrix
@@ -17,14 +19,11 @@ def hash_password(password):
 
 
 def load_data():
-    books = Books.objects.all()
-    ratings = Rating.objects.all()
+    books = Books.objects.all().values_list('bookId', 'title')
+    ratings = Rating.objects.all().values_list('userId', 'bookId', 'rating')
 
-    books_data = list(books.values())
-    ratings_data = list(ratings.values())
-
-    books_df = pd.DataFrame(books_data)
-    ratings_df = pd.DataFrame(ratings_data)
+    books_df = pd.DataFrame.from_records(books, columns=['bookId', 'title'])
+    ratings_df = pd.DataFrame.from_records(ratings, columns=['userId', 'bookId', 'rating'])
 
     return books_df, ratings_df
 
@@ -37,8 +36,6 @@ class KNN:
     def preprocess(self, books, ratings):
         # Merge books and ratings data
         combine_book_rating = pd.merge(ratings, books, on='bookId')
-        columns = ['year', 'publisher', 'category', 'author', 'price', 'img_s', 'img_m', 'img_l', 'like']
-        combine_book_rating = combine_book_rating.drop(columns, axis=1)
         combine_book_rating = combine_book_rating.dropna(axis=0, subset=['bookId'])
         return combine_book_rating
 
