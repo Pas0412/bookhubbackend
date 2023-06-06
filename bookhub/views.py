@@ -27,9 +27,14 @@ def get_average_rating(book_id):
         average_rating = Rating.objects.filter(bookId=book_id, rating__gt=0).aggregate(avg_rating=Avg('rating'))
     except Rating.DoesNotExist:
         return 0
-    return Decimal(average_rating['avg_rating'] / 2).quantize(Decimal('0.00'), rounding=ROUND_HALF_UP)
+
+    if average_rating['avg_rating'] is None:
+        return 0
+    else:
+        return Decimal(average_rating['avg_rating'] / 2).quantize(Decimal('0.00'), rounding=ROUND_HALF_UP)
 
 
+@csrf_exempt
 def sign_up(request):
     req = json.loads(request.body)
     username = req.get("username")
@@ -40,13 +45,13 @@ def sign_up(request):
         return JsonResponse({'code': 200, 'message': 'sign up failed'})
 
     # 获取当前最大的userId
-    max_user = User.objects.order_by('-userId').first()
+    max_user = User.objects.order_by('-user_id').first()
 
     # 计算新用户的userId
-    new_user_id = max_user.userId + 1 if max_user else 1
+    new_user_id = max_user.user_id + 1 if max_user else 1
 
     # 创建新用户
-    new_user = User(userId=new_user_id, username=username)
+    new_user = User(user_id=new_user_id, username=username, password=password_hash)
     new_user.save()
 
     return JsonResponse({'code': 200, 'message': 'user created'})
@@ -279,11 +284,31 @@ def get_shopping_cart(request):
 @csrf_exempt
 def get_search_result(request):
     # TODO: get search result here
-    str = json.loads(request.body)
-    # TODO: get result by str
-    data = []
+    req = json.loads(request.body)
+    search_string = req.get("search")
+    search_nb = req.get("nb")
+    matching_books = Books.objects.filter(title__icontains=search_string)[:search_nb]
+    book_ids = [book.bookId for book in matching_books]
 
-    return JsonResponse({'code': 200, 'message': 'search', 'data': data})
+    get_books_info = Books.objects.filter(bookId__in=book_ids)
+
+    serialized_data = []
+    for book in get_books_info:
+        serialized_data.append({
+            'bookId': book.bookId,
+            'title': book.title,
+            'author': book.author,
+            'publisher': book.publisher,
+            'category': book.category,
+            'year': book.year,
+            'price': book.price,
+            'img_s': book.img_s,
+            'img_m': book.img_m,
+            'img_l': book.img_l,
+        })
+    print(serialized_data)
+
+    return JsonResponse({'code': 200, 'message': 'search', 'data': serialized_data})
 
 
 @csrf_exempt
