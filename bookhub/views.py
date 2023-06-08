@@ -152,8 +152,9 @@ def get_all_books(request):
     # get all books here
     req = json.loads(request.body)
     cat = req.get('category')
+    nb = req.get('nb')
     print('cat:' + cat)
-    books = Books.objects.filter(category=cat)[:20]
+    books = Books.objects.filter(category=cat)[:nb]
 
     # convert to json
     data = [
