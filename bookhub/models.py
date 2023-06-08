@@ -39,6 +39,7 @@ class Rating(models.Model):
     bookId = models.CharField(max_length=100, db_column="ISBN")
     rating = models.IntegerField(db_column="Book-Rating")
     like = models.IntegerField(db_column="Favorite")
+    bought = models.IntegerField(db_column="Bought")
 
     class Meta:
         db_table = 'Rating'

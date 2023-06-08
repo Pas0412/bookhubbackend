@@ -193,7 +193,7 @@ def add_to_cart(request):
 
     cart = Cart.objects.filter(userId=data_user_id, bookId=data_book_id)
     if cart:
-        count_temp = cart.count + 1
+        count_temp = cart.values('count')[0]['count'] + 1
         cart.update(count=count_temp)
     else:
         new_cart = Cart()
@@ -238,6 +238,10 @@ def remove_cart(request):
         deleted_count, _ = Cart.objects.filter(userId=user_id, bookId=book_id).delete()
     # 执行删除操作
     else:
+        books = Cart.objects.filter(userId=user_id).values('bookId')
+        book_ids = [book['bookId'] for book in books]
+        for bid in book_ids:
+            Rating.objects.filter(userId=user_id, bookId=bid, bought=0).update(bought=1)
         deleted_count, _ = Cart.objects.filter(userId=user_id).delete()
 
     return JsonResponse({'code': 200, 'message': f'{deleted_count} records deleted'})
@@ -352,6 +356,7 @@ def set_favorite_list(request):
         favorite.bookId = data_book_id
         favorite.rating = 0
         favorite.like = data_like
+        favorite.bought = 0
         favorite.save()
 
     return JsonResponse({'code': 200, 'message': 'success'})
@@ -406,6 +411,7 @@ def is_favorite(request):
         data.bookId = data_book_id
         data.rating = 0
         data.like = 0
+        data.bought = 0
         data.save()
 
     res = 0
@@ -447,3 +453,50 @@ def recommend_by_book(request):
     print(processed_res)
 
     return JsonResponse({'code': 200, 'message': 'success', 'data': processed_res})
+
+
+@csrf_exempt
+def get_bought_list(request):
+    # get bought list here
+    user = json.loads(request.body)
+    user_id = user.get('id')
+    # get user's bought info by user_id
+    # 根据user_id在集合中查找对应的记录
+    try:
+        record = Rating.objects.filter(userId=user_id, bought=1)
+    except Rating.DoesNotExist:
+        return JsonResponse({'code': 200, 'message': 'Record not found'})
+
+    results = []
+
+    for item in record:
+        book = Books.objects.get(bookId=item.bookId)
+        rate = Rating.objects.get(userId=user_id, bookId=item.bookId)
+        results.append({
+            'user_id': user_id,
+            'book_id': book.bookId,
+            'rate': Decimal(rate.rating/2),
+            'title': book.title,
+            "author": book.author,
+            "publisher": book.publisher,
+            "category": book.category,
+            "year": book.year,
+            "price": book.price,
+            "img_s": book.img_s,
+            "img_m": book.img_m,
+            "img_l": book.img_l,
+        })
+
+    return JsonResponse({'code': 200, 'message': 'shopping cart', 'data': results})
+
+
+@csrf_exempt
+def set_rate(request):
+    req = json.loads(request.body)
+    data_user_id = req.get("user_id")
+    data_book_id = req.get("book_id")
+    data_rate = req.get("rate")
+
+    Rating.objects.filter(userId=data_user_id, bookId=data_book_id).update(rating=data_rate)
+
+    return JsonResponse({'code': 200, 'message': 'success'})
