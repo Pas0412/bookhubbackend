@@ -12,7 +12,6 @@ Project of DS50 UTBM 2023 ：Web e-commerce with recommandation algorithm （KNN
 ![](https://img.shields.io/badge/Django-v4.1.7-092E20?style=for-the-badge&logo=django)
 ![](https://img.shields.io/badge/MongoDB-v4.0.9-47A248?style=for-the-badge&logo=mongodb)
 ![](https://img.shields.io/badge/Djongo-v1.3.6-lightblue?style=for-the-badge&logo=django)
-![](https://img.shields.io/badge/pymongo-v4.3.3-yellow?style=for-the-badge&logo=django)
 
 ## MAKE DATABASE CHANGES:
 
@@ -36,6 +35,43 @@ python3.9 manage.py migrate bookhub
 ###  BOOKS
 
 ###  CART
+
+## FUNCTION
+
+### SIGN UP
+   - password encoding
+
+### LOG IN
+   - password encoding
+
+### DISPLAY BOOKS
+   - recommend books(most rated, most popular, recommendation based on one book using KNN)
+   - books by category
+   - book detail
+   - is favorite judgment
+   - get rate
+   - show more
+
+### CART
+   - set cart
+   - get cart
+   - remove cart by book/all
+   - payment
+
+### FAVORITE
+   - get favorite list
+   - set favorite
+   - remove favorite
+
+### RATING
+   - rating books(set rate)
+
+### SEARCH
+   - get search result
+   - show more
+
+### HISTORY
+   - get history of buying
 
 ## DEPENDENCIES
 ``` bash
