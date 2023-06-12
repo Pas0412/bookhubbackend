@@ -73,6 +73,20 @@ python3.9 manage.py migrate bookhub
 ### HISTORY
    - get history of buying
 
+## FOLDER STRUCTURE TREE
+<img width="310" alt="截屏2023-06-12 10 56 39" src="https://github.com/Pas0412/bookhubbackend/assets/68329670/f5910449-d498-4317-bdd1-3d528c77bb9e">
+
+   - models.py
+      collection mapping
+   - views.py
+      APIs
+   - utils.py
+      functions used in API (algorithm)
+   - setting.py
+      settings (registration of app, connection settings with MongoDB)
+   - urls.py
+      urls of APIs
+
 ## DEPENDENCIES
 ``` bash
 # pymongo
