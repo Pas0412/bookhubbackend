@@ -1,6 +1,8 @@
 # BookHub back-end
 backend for bookhub using Django and Python
 
+video of presentation: https://youtu.be/z4Pml66kBuk
+
 Author : [![](https://img.shields.io/badge/@Pas0412-grey)](https://github.com/Pas0412)
 
 Project of DS50 UTBM 2023 ：Web e-commerce with recommandation algorithm （KNN）
